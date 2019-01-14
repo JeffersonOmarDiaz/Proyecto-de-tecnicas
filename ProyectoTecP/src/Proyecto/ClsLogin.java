@@ -15,8 +15,8 @@ public class ClsLogin {
     private String clave;
 
     public ClsLogin() {
-        this.usuario="omar";
-        this.clave="6194omar";
+        this.usuario="admin";
+        this.clave="admin";
 
     }
 

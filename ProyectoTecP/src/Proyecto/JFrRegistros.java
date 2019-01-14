@@ -5,15 +5,24 @@
  */
 package Proyecto;
 
+import ConexionInter.Conexion;
+import ConexionInter.ProcedimientosAlmacenados;
+import java.awt.Image;
+import java.awt.Toolkit;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Scanner;
+import java.util.logging.Logger;
 import javax.swing.JButton;
 import javax.swing.JOptionPane;
 import javax.swing.JRadioButton;
 import javax.swing.table.DefaultTableModel;
+import java.sql.*;
+import java.util.logging.Level;
 
 /**
  *
@@ -33,12 +42,20 @@ public class JFrRegistros extends javax.swing.JFrame {
     //nuevo nombre para la tabla
     DefaultTableModel datosProducRegistro;
     DefaultTableModel AumentarProdcutos;
+    DefaultTableModel VenderProductos;
 
     boolean repetido;
+    boolean activarCamposCodigo = true;
     int seleccionTabla2;
+
+    ConexionInter.Conexion con = new Conexion();
+    Connection cn = con.getConnection();
 
     public JFrRegistros() {
         initComponents();
+
+        Image icono = Toolkit.getDefaultToolkit().getImage(ClassLoader.getSystemResource(("imagenes/logo.jpeg")));
+        this.setIconImage(icono);
 
         this.setLocationRelativeTo(null);
         llenarCmbDefecto();
@@ -48,15 +65,14 @@ public class JFrRegistros extends javax.swing.JFrame {
         datosProducRegistro = (DefaultTableModel) jtblProductos.getModel();
         AumentarProdcutos = (DefaultTableModel) jTablelBusqueda.getModel();
 
-        controlador = new Controlador();
-        productos = controlador.extraerObjetos(Fichero_productos);
-
-        if (controlador.extraerObjetos(Fichero_productos).isEmpty()) {
-            controlador.crearFichero(Fichero_productos);
-        }
-
-        preListProduc = controlador.extraerObjetos(Fichero_productos);
-
+//        controlador = new Controlador();
+//        productos = controlador.extraerObjetos(Fichero_productos);
+//
+//        if (controlador.extraerObjetos(Fichero_productos).isEmpty()) {
+//            controlador.crearFichero(Fichero_productos);
+//        }
+//
+//        preListProduc = controlador.extraerObjetos(Fichero_productos);
         llenarTABLAproductos();
         lblCodBusque.setText("----------");
         lblTallaBusq.setText("----------");
@@ -102,6 +118,7 @@ public class JFrRegistros extends javax.swing.JFrame {
         jLabel8 = new javax.swing.JLabel();
         jLabel9 = new javax.swing.JLabel();
         jLabel10 = new javax.swing.JLabel();
+        jLabel12 = new javax.swing.JLabel();
         jPanel1 = new javax.swing.JPanel();
         txtCodProd = new javax.swing.JTextField();
         btnGeneraCod = new javax.swing.JButton();
@@ -117,6 +134,7 @@ public class JFrRegistros extends javax.swing.JFrame {
         jRadioButton5 = new javax.swing.JRadioButton();
         jRadioButton6 = new javax.swing.JRadioButton();
         BtnCancelar = new javax.swing.JButton();
+        txtDetalleProduc = new javax.swing.JTextField();
         jScrollPane1 = new javax.swing.JScrollPane();
         jtblProductos = new javax.swing.JTable();
 
@@ -124,24 +142,28 @@ public class JFrRegistros extends javax.swing.JFrame {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
+        jTabbedPane2.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
+
+        jLabel1.setFont(new java.awt.Font("Franklin Gothic Medium", 1, 14)); // NOI18N
         jLabel1.setText("Ingrese el Código del Producto:");
 
+        txtCodBuscado.setFont(new java.awt.Font("Franklin Gothic Medium", 3, 14)); // NOI18N
+        txtCodBuscado.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                txtCodBuscadoMouseClicked(evt);
+            }
+        });
+
+        jTablelBusqueda.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
         jTablelBusqueda.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
 
             },
             new String [] {
-                "Camiseta para", "Talla", "Código", "Unidades disponibles", "Precio por unidad"
-            }
-        ) {
-            boolean[] canEdit = new boolean [] {
-                false, false, false, true, true
-            };
 
-            public boolean isCellEditable(int rowIndex, int columnIndex) {
-                return canEdit [columnIndex];
             }
-        });
+        ));
+        jTablelBusqueda.setRowHeight(22);
         jTablelBusqueda.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 jTablelBusquedaMouseClicked(evt);
@@ -149,6 +171,8 @@ public class JFrRegistros extends javax.swing.JFrame {
         });
         jScrollPane2.setViewportView(jTablelBusqueda);
 
+        btnBuscarProducto.setFont(new java.awt.Font("Tahoma", 3, 14)); // NOI18N
+        btnBuscarProducto.setIcon(new javax.swing.ImageIcon(getClass().getResource("/Imagenes/buscar.png"))); // NOI18N
         btnBuscarProducto.setText("Buscar Producto");
         btnBuscarProducto.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -156,12 +180,16 @@ public class JFrRegistros extends javax.swing.JFrame {
             }
         });
 
+        jSpinner1.setFont(new java.awt.Font("Franklin Gothic Medium", 3, 14)); // NOI18N
         jSpinner1.setModel(new javax.swing.SpinnerNumberModel(0, 0, null, 1));
         jSpinner1.setEnabled(false);
 
+        jLabel2.setFont(new java.awt.Font("Franklin Gothic Medium", 3, 14)); // NOI18N
         jLabel2.setText("Cuantos productos va a ingresar:");
 
-        btnSumaProductos.setText("Aumentar Productos");
+        btnSumaProductos.setFont(new java.awt.Font("Franklin Gothic Medium", 3, 14)); // NOI18N
+        btnSumaProductos.setIcon(new javax.swing.ImageIcon(getClass().getResource("/Imagenes/añadirP.png"))); // NOI18N
+        btnSumaProductos.setText("Añadir Productos");
         btnSumaProductos.setEnabled(false);
         btnSumaProductos.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -169,6 +197,8 @@ public class JFrRegistros extends javax.swing.JFrame {
             }
         });
 
+        btnCancelaSuma.setFont(new java.awt.Font("Franklin Gothic Medium", 3, 14)); // NOI18N
+        btnCancelaSuma.setIcon(new javax.swing.ImageIcon(getClass().getResource("/Imagenes/cancelar.png"))); // NOI18N
         btnCancelaSuma.setText("Cancelar");
         btnCancelaSuma.setEnabled(false);
         btnCancelaSuma.addActionListener(new java.awt.event.ActionListener() {
@@ -177,63 +207,77 @@ public class JFrRegistros extends javax.swing.JFrame {
             }
         });
 
+        jLabel3.setFont(new java.awt.Font("Franklin Gothic Medium", 3, 14)); // NOI18N
         jLabel3.setText("Camiseta de :");
 
+        jLabel4.setFont(new java.awt.Font("Franklin Gothic Medium", 3, 14)); // NOI18N
         jLabel4.setText("Talla:");
 
+        jLabel5.setFont(new java.awt.Font("Franklin Gothic Medium", 3, 14)); // NOI18N
         jLabel5.setText("Código Busqueda:");
 
+        jLabel11.setFont(new java.awt.Font("Franklin Gothic Medium", 3, 14)); // NOI18N
         jLabel11.setText("Unidades actuales:");
+
+        lblUnidadesActuales.setFont(new java.awt.Font("Tahoma", 1, 14)); // NOI18N
+
+        lblProBusqueda.setFont(new java.awt.Font("Franklin Gothic Medium", 3, 14)); // NOI18N
+
+        lblTallaBusq.setFont(new java.awt.Font("Franklin Gothic Medium", 3, 14)); // NOI18N
+
+        lblCodBusque.setFont(new java.awt.Font("Franklin Gothic Medium", 3, 14)); // NOI18N
 
         javax.swing.GroupLayout lblProducBusqueLayout = new javax.swing.GroupLayout(lblProducBusque);
         lblProducBusque.setLayout(lblProducBusqueLayout);
         lblProducBusqueLayout.setHorizontalGroup(
             lblProducBusqueLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(lblProducBusqueLayout.createSequentialGroup()
-                .addGroup(lblProducBusqueLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(lblProducBusqueLayout.createSequentialGroup()
-                        .addGap(118, 118, 118)
-                        .addGroup(lblProducBusqueLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addComponent(jLabel2)
-                            .addComponent(btnSumaProductos))
-                        .addGap(35, 35, 35)
-                        .addComponent(jSpinner1, javax.swing.GroupLayout.PREFERRED_SIZE, 57, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(lblProducBusqueLayout.createSequentialGroup()
-                        .addGap(127, 127, 127)
-                        .addComponent(jLabel1)
-                        .addGap(32, 32, 32)
-                        .addGroup(lblProducBusqueLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(btnBuscarProducto)
-                            .addComponent(txtCodBuscado, javax.swing.GroupLayout.PREFERRED_SIZE, 226, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                .addGap(128, 128, 128)
+                .addComponent(btnSumaProductos)
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, lblProducBusqueLayout.createSequentialGroup()
                 .addGap(41, 41, 41)
                 .addGroup(lblProducBusqueLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(jScrollPane2)
+                    .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 923, Short.MAX_VALUE)
                     .addGroup(lblProducBusqueLayout.createSequentialGroup()
-                        .addGroup(lblProducBusqueLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addGroup(lblProducBusqueLayout.createSequentialGroup()
-                                .addGap(0, 0, Short.MAX_VALUE)
-                                .addComponent(btnCancelaSuma))
-                            .addGroup(lblProducBusqueLayout.createSequentialGroup()
-                                .addComponent(jLabel3)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(lblProBusqueda, javax.swing.GroupLayout.PREFERRED_SIZE, 105, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGap(39, 39, 39)
-                                .addGroup(lblProducBusqueLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addGroup(lblProducBusqueLayout.createSequentialGroup()
-                                        .addComponent(jLabel4)
-                                        .addGap(18, 18, 18)
-                                        .addComponent(lblTallaBusq, javax.swing.GroupLayout.PREFERRED_SIZE, 105, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                    .addGroup(lblProducBusqueLayout.createSequentialGroup()
-                                        .addComponent(jLabel11)
-                                        .addGap(18, 18, 18)
-                                        .addComponent(lblUnidadesActuales, javax.swing.GroupLayout.PREFERRED_SIZE, 55, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addComponent(jLabel5)))
-                        .addGap(18, 18, 18)
-                        .addComponent(lblCodBusque, javax.swing.GroupLayout.PREFERRED_SIZE, 156, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addGap(0, 0, Short.MAX_VALUE)
+                        .addComponent(btnCancelaSuma)
+                        .addGap(174, 174, 174)))
                 .addGap(55, 55, 55))
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, lblProducBusqueLayout.createSequentialGroup()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addGroup(lblProducBusqueLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(lblProducBusqueLayout.createSequentialGroup()
+                        .addGap(86, 86, 86)
+                        .addComponent(jLabel1)
+                        .addGap(32, 32, 32)
+                        .addGroup(lblProducBusqueLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(btnBuscarProducto)
+                            .addComponent(txtCodBuscado, javax.swing.GroupLayout.PREFERRED_SIZE, 226, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                    .addGroup(lblProducBusqueLayout.createSequentialGroup()
+                        .addComponent(jLabel3)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(lblProBusqueda, javax.swing.GroupLayout.PREFERRED_SIZE, 105, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(39, 39, 39)
+                        .addGroup(lblProducBusqueLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(lblProducBusqueLayout.createSequentialGroup()
+                                .addComponent(jLabel4)
+                                .addGap(18, 18, 18)
+                                .addComponent(lblTallaBusq, javax.swing.GroupLayout.PREFERRED_SIZE, 105, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(98, 98, 98)
+                                .addComponent(jLabel5)
+                                .addGap(18, 18, 18)
+                                .addComponent(lblCodBusque, javax.swing.GroupLayout.PREFERRED_SIZE, 156, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addGroup(lblProducBusqueLayout.createSequentialGroup()
+                                .addComponent(jLabel11)
+                                .addGap(18, 18, 18)
+                                .addComponent(lblUnidadesActuales, javax.swing.GroupLayout.PREFERRED_SIZE, 55, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, lblProducBusqueLayout.createSequentialGroup()
+                        .addComponent(jLabel2)
+                        .addGap(35, 35, 35)
+                        .addComponent(jSpinner1, javax.swing.GroupLayout.PREFERRED_SIZE, 57, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(308, 308, 308)))
+                .addGap(47, 47, 47))
         );
         lblProducBusqueLayout.setVerticalGroup(
             lblProducBusqueLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -257,11 +301,11 @@ public class JFrRegistros extends javax.swing.JFrame {
                 .addGroup(lblProducBusqueLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel11)
                     .addComponent(lblUnidadesActuales, javax.swing.GroupLayout.PREFERRED_SIZE, 16, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGap(18, 18, 18)
                 .addGroup(lblProducBusqueLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jSpinner1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel2))
-                .addGap(32, 32, 32)
+                .addGap(25, 25, 25)
                 .addGroup(lblProducBusqueLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(btnSumaProductos)
                     .addComponent(btnCancelaSuma))
@@ -272,50 +316,66 @@ public class JFrRegistros extends javax.swing.JFrame {
 
         jTabbedPane2.addTab("AÑADIR PRODUCTOS EXISTENTES", lblProducBusque);
 
+        jLabel6.setFont(new java.awt.Font("Tahoma", 1, 14)); // NOI18N
         jLabel6.setText("Camiseta para:");
 
+        cmbHMN.setFont(new java.awt.Font("Tahoma", 1, 14)); // NOI18N
         cmbHMN.addItemListener(new java.awt.event.ItemListener() {
             public void itemStateChanged(java.awt.event.ItemEvent evt) {
                 cmbHMNItemStateChanged(evt);
             }
         });
 
+        jLabel7.setFont(new java.awt.Font("Tahoma", 1, 14)); // NOI18N
         jLabel7.setText("Talla:");
 
+        jLabel8.setFont(new java.awt.Font("Tahoma", 1, 14)); // NOI18N
         jLabel8.setText("Unidades por producto:");
         jLabel8.setToolTipText("");
 
+        jLabel9.setFont(new java.awt.Font("Tahoma", 1, 14)); // NOI18N
         jLabel9.setText("Código de camiseta:");
 
+        jLabel10.setFont(new java.awt.Font("Tahoma", 1, 14)); // NOI18N
         jLabel10.setText("Precio de venta unidad:");
+
+        jLabel12.setFont(new java.awt.Font("Tahoma", 1, 14)); // NOI18N
+        jLabel12.setText("Detalle:");
 
         javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
         jPanel2.setLayout(jPanel2Layout);
         jPanel2Layout.setHorizontalGroup(
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel2Layout.createSequentialGroup()
+            .addGroup(jPanel2Layout.createSequentialGroup()
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jLabel10)
                     .addComponent(jLabel7, javax.swing.GroupLayout.Alignment.TRAILING)
                     .addComponent(jLabel9, javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(jLabel8, javax.swing.GroupLayout.Alignment.TRAILING))
+                    .addComponent(jLabel8, javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(jLabel10, javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(jLabel12, javax.swing.GroupLayout.Alignment.TRAILING))
                 .addContainerGap())
         );
         jPanel2Layout.setVerticalGroup(
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel2Layout.createSequentialGroup()
                 .addComponent(jLabel7)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 61, Short.MAX_VALUE)
+                .addGap(67, 67, 67)
                 .addComponent(jLabel9)
+                .addGap(25, 25, 25)
+                .addComponent(jLabel12)
                 .addGap(18, 18, 18)
                 .addComponent(jLabel8)
-                .addGap(30, 30, 30)
-                .addComponent(jLabel10))
+                .addGap(27, 27, 27)
+                .addComponent(jLabel10)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
+        txtCodProd.setFont(new java.awt.Font("Tahoma", 1, 14)); // NOI18N
         txtCodProd.setText(" ");
 
+        btnGeneraCod.setFont(new java.awt.Font("Tahoma", 1, 14)); // NOI18N
+        btnGeneraCod.setIcon(new javax.swing.ImageIcon(getClass().getResource("/Imagenes/codigo.png"))); // NOI18N
         btnGeneraCod.setText("Generar código");
         btnGeneraCod.setToolTipText("Generar un codigo aleatorio si no sabe que código escribir");
         btnGeneraCod.addActionListener(new java.awt.event.ActionListener() {
@@ -324,11 +384,15 @@ public class JFrRegistros extends javax.swing.JFrame {
             }
         });
 
+        jSpinnCantidad.setFont(new java.awt.Font("Tahoma", 1, 14)); // NOI18N
         jSpinnCantidad.setModel(new javax.swing.SpinnerNumberModel(0, 0, null, 1));
         jSpinnCantidad.setToolTipText("Cantidades nuevas para ingreso ");
 
+        txtPrecioProd.setFont(new java.awt.Font("Tahoma", 1, 14)); // NOI18N
         txtPrecioProd.setToolTipText("Ingreso de precio de venta por unidad de producto");
 
+        btnGuardar.setFont(new java.awt.Font("Tahoma", 1, 14)); // NOI18N
+        btnGuardar.setIcon(new javax.swing.ImageIcon(getClass().getResource("/Imagenes/guardar.png"))); // NOI18N
         btnGuardar.setText("Guardar");
         btnGuardar.setToolTipText("Guardar nuevo registro");
         btnGuardar.addActionListener(new java.awt.event.ActionListener() {
@@ -337,6 +401,8 @@ public class JFrRegistros extends javax.swing.JFrame {
             }
         });
 
+        btnEditar.setFont(new java.awt.Font("Tahoma", 1, 14)); // NOI18N
+        btnEditar.setIcon(new javax.swing.ImageIcon(getClass().getResource("/Imagenes/editar.png"))); // NOI18N
         btnEditar.setText("Editar");
         btnEditar.setToolTipText("Editar Registro de Producto");
         btnEditar.addActionListener(new java.awt.event.ActionListener() {
@@ -345,6 +411,8 @@ public class JFrRegistros extends javax.swing.JFrame {
             }
         });
 
+        btnEliminar.setFont(new java.awt.Font("Tahoma", 1, 14)); // NOI18N
+        btnEliminar.setIcon(new javax.swing.ImageIcon(getClass().getResource("/Imagenes/borrar.png"))); // NOI18N
         btnEliminar.setText("Eliminar");
         btnEliminar.setToolTipText("Eliminar Registro de Producto");
         btnEliminar.addActionListener(new java.awt.event.ActionListener() {
@@ -354,28 +422,42 @@ public class JFrRegistros extends javax.swing.JFrame {
         });
 
         buttonGroupTallas.add(jRadioButton1);
+        jRadioButton1.setFont(new java.awt.Font("Tahoma", 1, 14)); // NOI18N
         jRadioButton1.setText("S");
 
         buttonGroupTallas.add(jRadioButton2);
+        jRadioButton2.setFont(new java.awt.Font("Tahoma", 1, 14)); // NOI18N
         jRadioButton2.setText("M");
 
         buttonGroupTallas.add(jRadioButton3);
+        jRadioButton3.setFont(new java.awt.Font("Tahoma", 1, 14)); // NOI18N
         jRadioButton3.setText("L");
 
         buttonGroupTallas.add(jRadioButton4);
+        jRadioButton4.setFont(new java.awt.Font("Tahoma", 1, 14)); // NOI18N
         jRadioButton4.setText("XL");
 
         buttonGroupTallas.add(jRadioButton5);
+        jRadioButton5.setFont(new java.awt.Font("Tahoma", 1, 14)); // NOI18N
         jRadioButton5.setText("XXL");
 
         buttonGroupTallas.add(jRadioButton6);
+        jRadioButton6.setFont(new java.awt.Font("Tahoma", 1, 14)); // NOI18N
         jRadioButton6.setText("DES");
 
-        BtnCancelar.setText("Cancelar");
+        BtnCancelar.setFont(new java.awt.Font("Tahoma", 1, 14)); // NOI18N
+        BtnCancelar.setIcon(new javax.swing.ImageIcon(getClass().getResource("/Imagenes/cancelar.png"))); // NOI18N
+        BtnCancelar.setText("Cancelar Acción");
         BtnCancelar.setToolTipText("Cancelar proceso de: Guardar, Editar o Eliminar");
         BtnCancelar.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 BtnCancelarActionPerformed(evt);
+            }
+        });
+
+        txtDetalleProduc.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyReleased(java.awt.event.KeyEvent evt) {
+                txtDetalleProducKeyReleased(evt);
             }
         });
 
@@ -389,19 +471,13 @@ public class JFrRegistros extends javax.swing.JFrame {
                     .addComponent(jSpinnCantidad, javax.swing.GroupLayout.PREFERRED_SIZE, 54, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(txtPrecioProd, javax.swing.GroupLayout.PREFERRED_SIZE, 90, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(jPanel1Layout.createSequentialGroup()
-                                .addComponent(btnGuardar)
-                                .addGap(27, 27, 27)
-                                .addComponent(btnEditar))
-                            .addComponent(txtCodProd, javax.swing.GroupLayout.PREFERRED_SIZE, 124, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addComponent(btnGuardar)
+                        .addGap(27, 27, 27)
+                        .addComponent(btnEditar)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(btnGeneraCod)
-                            .addGroup(jPanel1Layout.createSequentialGroup()
-                                .addComponent(btnEliminar)
-                                .addGap(27, 27, 27)
-                                .addComponent(BtnCancelar))))
+                        .addComponent(btnEliminar)
+                        .addGap(27, 27, 27)
+                        .addComponent(BtnCancelar))
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(jPanel1Layout.createSequentialGroup()
@@ -415,8 +491,14 @@ public class JFrRegistros extends javax.swing.JFrame {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(jRadioButton5)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(jRadioButton6)))
-                .addContainerGap(40, Short.MAX_VALUE))
+                        .addComponent(jRadioButton6))
+                    .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                        .addComponent(txtDetalleProduc, javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanel1Layout.createSequentialGroup()
+                            .addComponent(txtCodProd, javax.swing.GroupLayout.PREFERRED_SIZE, 124, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addGap(61, 61, 61)
+                            .addComponent(btnGeneraCod))))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -436,13 +518,15 @@ public class JFrRegistros extends javax.swing.JFrame {
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(jRadioButton5)
                             .addComponent(jRadioButton6))))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 25, Short.MAX_VALUE)
+                .addGap(18, 18, 18)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(txtCodProd, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(btnGeneraCod))
                 .addGap(18, 18, 18)
-                .addComponent(jSpinnCantidad, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(txtDetalleProduc, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
+                .addComponent(jSpinnCantidad, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 11, Short.MAX_VALUE)
                 .addComponent(txtPrecioProd, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
@@ -452,22 +536,16 @@ public class JFrRegistros extends javax.swing.JFrame {
                     .addComponent(BtnCancelar)))
         );
 
+        jtblProductos.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
         jtblProductos.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
 
             },
             new String [] {
-                "Camiseta", "Talla", "Código", "Unidades", "Precio Unidad"
-            }
-        ) {
-            boolean[] canEdit = new boolean [] {
-                false, false, false, false, false
-            };
 
-            public boolean isCellEditable(int rowIndex, int columnIndex) {
-                return canEdit [columnIndex];
             }
-        });
+        ));
+        jtblProductos.setRowHeight(22);
         jtblProductos.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 jtblProductosMouseClicked(evt);
@@ -479,39 +557,40 @@ public class JFrRegistros extends javax.swing.JFrame {
         jPanel4.setLayout(jPanel4Layout);
         jPanel4Layout.setHorizontalGroup(
             jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel4Layout.createSequentialGroup()
-                .addContainerGap(137, Short.MAX_VALUE)
-                .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(76, 76, 76))
             .addGroup(jPanel4Layout.createSequentialGroup()
-                .addGap(189, 189, 189)
-                .addComponent(jLabel6)
-                .addGap(18, 18, 18)
-                .addComponent(cmbHMN, javax.swing.GroupLayout.PREFERRED_SIZE, 192, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(0, 0, Short.MAX_VALUE))
-            .addGroup(jPanel4Layout.createSequentialGroup()
-                .addGap(45, 45, 45)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 651, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(jPanel4Layout.createSequentialGroup()
+                        .addGap(127, 127, 127)
+                        .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(jPanel4Layout.createSequentialGroup()
+                        .addGap(42, 42, 42)
+                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 934, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(jPanel4Layout.createSequentialGroup()
+                        .addGap(347, 347, 347)
+                        .addComponent(jLabel6)
+                        .addGap(18, 18, 18)
+                        .addComponent(cmbHMN, javax.swing.GroupLayout.PREFERRED_SIZE, 192, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addContainerGap(43, Short.MAX_VALUE))
         );
         jPanel4Layout.setVerticalGroup(
             jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel4Layout.createSequentialGroup()
-                .addContainerGap(75, Short.MAX_VALUE)
+                .addGap(63, 63, 63)
                 .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(cmbHMN, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel6))
-                .addGap(18, 18, 18)
-                .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addGroup(jPanel4Layout.createSequentialGroup()
-                        .addGap(9, 9, 9)
-                        .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(42, 42, 42)
+                        .addGap(18, 18, 18)
+                        .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(jPanel4Layout.createSequentialGroup()
+                        .addGap(27, 27, 27)
+                        .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                .addGap(18, 18, 18)
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 154, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap())
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         jTabbedPane2.addTab("REGISTRO DE NUEVOS PRODUCTOS", jPanel4);
@@ -537,19 +616,24 @@ public class JFrRegistros extends javax.swing.JFrame {
         int row = jtblProductos.getSelectedRow();
 
         DefaultTableModel modelo = (DefaultTableModel) jtblProductos.getModel();
-        String codigo = String.valueOf(jtblProductos.getValueAt(row, 2));
-        String unidades = String.valueOf(jtblProductos.getValueAt(row, 3));
-        String precio = String.valueOf(jtblProductos.getValueAt(row, 4));
-        String talla = String.valueOf(jtblProductos.getValueAt(row, 1));
+        String codigo = String.valueOf(jtblProductos.getValueAt(row, 1));
+        String unidades = String.valueOf(jtblProductos.getValueAt(row, 4));
+        String precio = String.valueOf(jtblProductos.getValueAt(row, 5));
+        String talla = String.valueOf(jtblProductos.getValueAt(row, 2));
+        String detalle = String.valueOf(jtblProductos.getValueAt(row, 3));
 
         txtCodProd.setText(codigo);
         txtPrecioProd.setText(precio);
+        txtDetalleProduc.setText(detalle);
         jSpinnCantidad.setValue(Integer.parseInt(unidades));
 
         desactivarCampos(false);
         btnEditar.setEnabled(true);
         btnEliminar.setEnabled(true);
         BtnCancelar.setEnabled(true);
+
+        activarCamposCodigo = false;
+        System.out.println("El valor de verdad es falso");
     }//GEN-LAST:event_jtblProductosMouseClicked
 
     private void btnEliminarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEliminarActionPerformed
@@ -559,7 +643,7 @@ public class JFrRegistros extends javax.swing.JFrame {
 
         //Sección 2
         int a = jtblProductos.getSelectedRow();
-        System.out.println("LA filka seleccionada ha sido: " + a);
+        System.out.println("LA fila seleccionada ha sido: " + a);
 
         //Sección 3
         if (a < 0) {
@@ -575,18 +659,23 @@ public class JFrRegistros extends javax.swing.JFrame {
 
             //Sección 5
             if (JOptionPane.OK_OPTION == confirmar) {
-                //Sección 6
-                limpiarcamposTBP(jRadioButton1, jRadioButton2, jRadioButton3, jRadioButton4, jRadioButton5, jRadioButton6, true);
-                datosProducRegistro.removeRow(a);
-                AumentarProdcutos.removeRow(a);
-                productos.remove(a);
-                controlador.escribirObjeto(Fichero_productos, productos);
-                //Sección 7
-                JOptionPane.showMessageDialog(null, "Registro Eliminado");
-                desactivarOpciones();
-                BtnCancelar.setEnabled(false);
-                btnGuardar.setVisible(true);
-                btnGuardar.setEnabled(false);
+                try {
+                    System.out.println("LO que quiero eliminar es: " + jtblProductos.getValueAt(a, 0).toString());
+                    ProcedimientosAlmacenados.EliminarRegistroProducto(jtblProductos.getValueAt(a, 1).toString());
+
+                    //Sección 6
+                    limpiarcamposTBP(jRadioButton1, jRadioButton2, jRadioButton3, jRadioButton4, jRadioButton5, jRadioButton6, true);
+                    llenarTABLAproductos();
+                    //Sección 7
+                    JOptionPane.showMessageDialog(null, "Registro Eliminado");
+                    desactivarOpciones();
+                    BtnCancelar.setEnabled(false);
+                    btnGuardar.setVisible(true);
+                    btnGuardar.setEnabled(false);
+                } catch (SQLException e) {
+                    JOptionPane.showMessageDialog(null, "No se puede elminar este registro " + e);
+                }
+
             }
 
         }
@@ -595,15 +684,16 @@ public class JFrRegistros extends javax.swing.JFrame {
     private void btnEditarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEditarActionPerformed
 
         try {
+
             int row = jtblProductos.getSelectedRow();
             String codProd = txtCodProd.getText();
             int unidades = (int) jSpinnCantidad.getValue();
             double precio = Double.valueOf(txtPrecioProd.getText());
             String camisetaDE = (String) cmbHMN.getSelectedItem();
+            String detalle = txtDetalleProduc.getText();
             escuchaCMB(camisetaDE);
             String talla;
 
-            //ClsProductos pr = (ClsProductos) productos.get(row);
             if (cmbHMN.getSelectedItem().equals("Seleccione")) {
                 JOptionPane.showMessageDialog(null, "Asegurese de escoger camiseta para: Hombre, Mujer o Niñ@", "Error", JOptionPane.WARNING_MESSAGE);
                 return;
@@ -616,165 +706,228 @@ public class JFrRegistros extends javax.swing.JFrame {
                 if (jRadioButton1.isSelected()) {
                     talla = "S";
                     System.out.println("Talla S");
-//                    pr.setCamisetaPara(camisetaDE);
-//                    pr.setTalla(talla);
-//                    pr.setCodigo(codProd);
-//                    pr.setUnidadProdcu(unidades);
-//                    pr.setPrecioVentaUnid(precio);
-//                    ingresar_en_Archivo_DAT(talla);
 
                 } else if (jRadioButton2.isSelected()) {
                     talla = "M";
                     System.out.println("Talla M");
-                    //                    llenaPTabla(camisetaDE, talla, codProd, unidades, precio);
-
-                    System.out.println("Talla S");
-//                    pr.setCamisetaPara(camisetaDE);
-//                    pr.setTalla(talla);
-//                    pr.setCodigo(codProd);
-//                    pr.setUnidadProdcu(unidades);
-//                    pr.setPrecioVentaUnid(precio);
-//                                        ingresar_en_Archivo_DAT(talla);
                 } else if (jRadioButton3.isSelected()) {
                     System.out.println("Talla L");
                     talla = "L";
-
-                    System.out.println("Talla S");
-//                    pr.setCamisetaPara(camisetaDE);
-//                    pr.setTalla(talla);
-//                    pr.setCodigo(codProd);
-//                    pr.setUnidadProdcu(unidades);
-//                    pr.setPrecioVentaUnid(precio);
-//                                        ingresar_en_Archivo_DAT(talla);
+                    System.out.println("Talla L");
                 } else if (jRadioButton4.isSelected()) {
                     System.out.println("Talla XL");
                     talla = "XL";
-//                                        ingresar_en_Archivo_DAT(talla);
                     System.out.println("Talla S");
-//                    pr.setCamisetaPara(camisetaDE);
-//                    pr.setTalla(talla);
-//                    pr.setCodigo(codProd);
-//                    pr.setUnidadProdcu(unidades);
-//                    pr.setPrecioVentaUnid(precio);
                 } else if (jRadioButton5.isSelected()) {
                     System.out.println("Talla XXL");
                     talla = "XXL";
-//                                        ingresar_en_Archivo_DAT(talla);
-//                    System.out.println("Talla S");
-//                    pr.setCamisetaPara(camisetaDE);
-//                    pr.setTalla(talla);
-//                    pr.setCodigo(codProd);
-//                    pr.setUnidadProdcu(unidades);
-//                    pr.setPrecioVentaUnid(precio);
                 } else {
                     JOptionPane.showMessageDialog(this, "No ha escogido una talla");
                     return;
                 }
-//                ingresar_en_Archivo_DAT(codProd);
-                //TextLayout.ANALYSIS_MASK;
-                if (codProd.equals(jtblProductos.getValueAt(row, 2))) {
-
-//                    ClsProductos Pr = new ClsProductos(camisetaDE, talla, codProd, unidades, precio);
-//                    System.out.println("Tratando de registrar 2");
-//                    productos.add(Pr);
-//                    controlador.escribirObjeto(Fichero_productos, productos);
-//                    llenarTABLAproductos();
-//                    datosProducRegistro.removeRow(row);
-//                    productos.remove(row);
-//                    controlador.escribirObjeto(Fichero_productos, productos);
-//                    System.out.println("Producto de codigo: " + codProd);
-                    int columna = jtblProductos.getSelectedRow();
-                    System.out.println("LA posicion actual es: " + columna);
-                    ClsProductos product = (ClsProductos) productos.get(columna);
-                    product.setCamisetaPara(camisetaDE);
-                    product.setTalla(talla);
-                    product.setCodigo(codProd);
-                    product.setPrecioVentaUnid(precio);
-                    product.setUnidadProdcu(unidades);
-
-                    controlador.escribirObjeto(Fichero_productos, productos);
-                    datosProducRegistro.setValueAt(product.getCamisetaPara(), columna, 0);
-                    datosProducRegistro.setValueAt(product.getTalla(), columna, 1);
-                    datosProducRegistro.setValueAt(product.getCodigo(), columna, 2);
-                    datosProducRegistro.setValueAt(product.getUnidadProdcu(), columna, 3);
-                    datosProducRegistro.setValueAt(product.getPrecioVentaUnid(), columna, 4);
-
-                    ////*********** modificacion de productos vista en tabla de aumentar produtos 
-                    AumentarProdcutos.setValueAt(product.getCamisetaPara(), columna, 0);
-                    AumentarProdcutos.setValueAt(product.getTalla(), columna, 1);
-                    AumentarProdcutos.setValueAt(product.getCodigo(), columna, 2);
-                    AumentarProdcutos.setValueAt(product.getUnidadProdcu(), columna, 3);
-                    AumentarProdcutos.setValueAt(product.getPrecioVentaUnid(), columna, 4);
-                    //llenarTABLAproductos();
-
-                    System.out.println("En donde se escribio fue en " + columna);
-                    System.out.println("Producto de codigo: " + codProd);
-                    btnGuardar.setVisible(true);
-                    activarCampos(false);
-                    btnEliminar.setEnabled(false);
-                    btnEditar.setEnabled(false);
-                    BtnCancelar.setEnabled(false);
-                    desactivarOpciones();
-                } else {
-
-                    ClsProductos pr = new ClsProductos(camisetaDE, talla, codProd, unidades, precio);
-                    //boolean repetido = false;
-                    if (productos.size() >= 0) {
-                        System.out.println("restriccion de productos mayores a cero");
-                        System.out.println("El tamaño de productos es : " + productos.size());
-                        for (int i = 0; i < productos.size(); i++) {
-                            pr = (ClsProductos) productos.get(i);
-                            Object registro_Productos[] = {pr.getCamisetaPara(), pr.getTalla(), pr.getCodigo(), pr.getUnidadProdcu(), pr.getPrecioVentaUnid()};
-                            if (registro_Productos[2].equals(txtCodProd.getText())) {
-                                System.out.println("El codigo que quiere ingresar es: " + txtCodProd.getText() + " y el actual es: " + registro_Productos[2]);
-                                JOptionPane.showMessageDialog(this, "Este codigo ya existe ingrese uno nuevo o genere uno aleatorio");
-
-                                repetido = true;
-                            }
-                        }
-                    }
-
-                }
-                if (repetido == false) {
-                    int columna = jtblProductos.getSelectedRow();
-                    System.out.println("LA posicion actual es: " + columna);
-                    ClsProductos product = (ClsProductos) productos.get(columna);
-                    product.setCamisetaPara(camisetaDE);
-                    product.setTalla(talla);
-                    product.setCodigo(codProd);
-                    product.setPrecioVentaUnid(precio);
-                    product.setUnidadProdcu(unidades);
-
-                    controlador.escribirObjeto(Fichero_productos, productos);
-                    datosProducRegistro.setValueAt(product.getCamisetaPara(), columna, 0);
-                    datosProducRegistro.setValueAt(product.getTalla(), columna, 1);
-                    datosProducRegistro.setValueAt(product.getCodigo(), columna, 2);
-                    datosProducRegistro.setValueAt(product.getUnidadProdcu(), columna, 3);
-                    datosProducRegistro.setValueAt(product.getPrecioVentaUnid(), columna, 4);
-
-                    ///*********** modificacion de productos vista en tabla de aumentar produtos 
-                    AumentarProdcutos.setValueAt(product.getCamisetaPara(), columna, 0);
-                    AumentarProdcutos.setValueAt(product.getTalla(), columna, 1);
-                    AumentarProdcutos.setValueAt(product.getCodigo(), columna, 2);
-                    AumentarProdcutos.setValueAt(product.getUnidadProdcu(), columna, 3);
-                    AumentarProdcutos.setValueAt(product.getPrecioVentaUnid(), columna, 4);
-
-                    System.out.println("En donde se escribio fue en " + columna);
-                    System.out.println("Producto de codigo: " + codProd);
-                    btnGuardar.setVisible(true);
-                    activarCampos(false);
-                    btnEliminar.setEnabled(false);
-                    btnEditar.setEnabled(false);
-                    BtnCancelar.setEnabled(false);
-                    desactivarOpciones();
-                }
-
+                PreparedStatement pps = ConexionInter.Conexion.getConnection().prepareStatement("update Productos set precioVentaProduc='" + precio
+                        + "',camisetaHMN='" + camisetaDE
+                        + "',tallaProduc='" + talla
+                        + "',unidadesProduc='" + unidades
+                        + "',detalles='" + detalle
+                        + "'where IdProduc='" + codProd + "'");
+                pps.executeUpdate();
+                JOptionPane.showMessageDialog(null, "Los datos han sido modificados.");
+                llenarTABLAproductos();
+                limpiarcamposTBP(jRadioButton1, jRadioButton2, jRadioButton3, jRadioButton4, jRadioButton5, jRadioButton6, true);
+                desactivarCampos(false);
+                activarCampos(false);
+                desactivarOpciones();
+                btnGuardar.setVisible(true);
+                btnGuardar.setEnabled(false);
+                activarCamposCodigo = true;
             }
 
-        } catch (NumberFormatException ex) {
-            //.....aqui lo que quieras hacer si los campos estan vacios y tratan de calcular el total...
-            JOptionPane.showMessageDialog(this, "Ingrese un valor numerico en el campo de precio ejemplo 1, 2, 3 ...");
+        } catch (SQLException e) {
+            System.out.println("No se pudo modificar: ");
         }
+
+//        try {
+//            int row = jtblProductos.getSelectedRow();
+//            String codProd = txtCodProd.getText();
+//            int unidades = (int) jSpinnCantidad.getValue();
+//            double precio = Double.valueOf(txtPrecioProd.getText());
+//            String camisetaDE = (String) cmbHMN.getSelectedItem();
+//            escuchaCMB(camisetaDE);
+//            String talla;
+//
+//            //ClsProductos pr = (ClsProductos) productos.get(row);
+//            if (cmbHMN.getSelectedItem().equals("Seleccione")) {
+//                JOptionPane.showMessageDialog(null, "Asegurese de escoger camiseta para: Hombre, Mujer o Niñ@", "Error", JOptionPane.WARNING_MESSAGE);
+//                return;
+//            }
+//
+//            if (codProd.equals("") || txtPrecioProd.equals("")) {
+//                JOptionPane.showMessageDialog(this, "Asegurese de llenar todos los campos");
+//            } else {
+//
+//                if (jRadioButton1.isSelected()) {
+//                    talla = "S";
+//                    System.out.println("Talla S");
+////                    pr.setCamisetaPara(camisetaDE);
+////                    pr.setTalla(talla);
+////                    pr.setCodigo(codProd);
+////                    pr.setUnidadProdcu(unidades);
+////                    pr.setPrecioVentaUnid(precio);
+////                    ingresar_en_Archivo_DAT(talla);
+//
+//                } else if (jRadioButton2.isSelected()) {
+//                    talla = "M";
+//                    System.out.println("Talla M");
+//                    //                    llenaPTabla(camisetaDE, talla, codProd, unidades, precio);
+//
+//                    System.out.println("Talla S");
+////                    pr.setCamisetaPara(camisetaDE);
+////                    pr.setTalla(talla);
+////                    pr.setCodigo(codProd);
+////                    pr.setUnidadProdcu(unidades);
+////                    pr.setPrecioVentaUnid(precio);
+////                                        ingresar_en_Archivo_DAT(talla);
+//                } else if (jRadioButton3.isSelected()) {
+//                    System.out.println("Talla L");
+//                    talla = "L";
+//
+//                    System.out.println("Talla S");
+////                    pr.setCamisetaPara(camisetaDE);
+////                    pr.setTalla(talla);
+////                    pr.setCodigo(codProd);
+////                    pr.setUnidadProdcu(unidades);
+////                    pr.setPrecioVentaUnid(precio);
+////                                        ingresar_en_Archivo_DAT(talla);
+//                } else if (jRadioButton4.isSelected()) {
+//                    System.out.println("Talla XL");
+//                    talla = "XL";
+////                                        ingresar_en_Archivo_DAT(talla);
+//                    System.out.println("Talla S");
+////                    pr.setCamisetaPara(camisetaDE);
+////                    pr.setTalla(talla);
+////                    pr.setCodigo(codProd);
+////                    pr.setUnidadProdcu(unidades);
+////                    pr.setPrecioVentaUnid(precio);
+//                } else if (jRadioButton5.isSelected()) {
+//                    System.out.println("Talla XXL");
+//                    talla = "XXL";
+////                                        ingresar_en_Archivo_DAT(talla);
+////                    System.out.println("Talla S");
+////                    pr.setCamisetaPara(camisetaDE);
+////                    pr.setTalla(talla);
+////                    pr.setCodigo(codProd);
+////                    pr.setUnidadProdcu(unidades);
+////                    pr.setPrecioVentaUnid(precio);
+//                } else {
+//                    JOptionPane.showMessageDialog(this, "No ha escogido una talla");
+//                    return;
+//                }
+////                ingresar_en_Archivo_DAT(codProd);
+//                //TextLayout.ANALYSIS_MASK;
+//                if (codProd.equals(jtblProductos.getValueAt(row, 2))) {
+//
+////                    ClsProductos Pr = new ClsProductos(camisetaDE, talla, codProd, unidades, precio);
+////                    System.out.println("Tratando de registrar 2");
+////                    productos.add(Pr);
+////                    controlador.escribirObjeto(Fichero_productos, productos);
+////                    llenarTABLAproductos();
+////                    datosProducRegistro.removeRow(row);
+////                    productos.remove(row);
+////                    controlador.escribirObjeto(Fichero_productos, productos);
+////                    System.out.println("Producto de codigo: " + codProd);
+//                    int columna = jtblProductos.getSelectedRow();
+//                    System.out.println("LA posicion actual es: " + columna);
+//                    ClsProductos product = (ClsProductos) productos.get(columna);
+//                    product.setCamisetaPara(camisetaDE);
+//                    product.setTalla(talla);
+//                    product.setCodigo(codProd);
+//                    product.setPrecioVentaUnid(precio);
+//                    product.setUnidadProdcu(unidades);
+//
+//                    controlador.escribirObjeto(Fichero_productos, productos);
+//                    datosProducRegistro.setValueAt(product.getCamisetaPara(), columna, 0);
+//                    datosProducRegistro.setValueAt(product.getTalla(), columna, 1);
+//                    datosProducRegistro.setValueAt(product.getCodigo(), columna, 2);
+//                    datosProducRegistro.setValueAt(product.getUnidadProdcu(), columna, 3);
+//                    datosProducRegistro.setValueAt(product.getPrecioVentaUnid(), columna, 4);
+//
+//                    ////*********** modificacion de productos vista en tabla de aumentar produtos 
+//                    AumentarProdcutos.setValueAt(product.getCamisetaPara(), columna, 0);
+//                    AumentarProdcutos.setValueAt(product.getTalla(), columna, 1);
+//                    AumentarProdcutos.setValueAt(product.getCodigo(), columna, 2);
+//                    AumentarProdcutos.setValueAt(product.getUnidadProdcu(), columna, 3);
+//                    AumentarProdcutos.setValueAt(product.getPrecioVentaUnid(), columna, 4);
+//                    //llenarTABLAproductos();
+//
+//                    System.out.println("En donde se escribio fue en " + columna);
+//                    System.out.println("Producto de codigo: " + codProd);
+//                    btnGuardar.setVisible(true);
+//                    activarCampos(false);
+//                    btnEliminar.setEnabled(false);
+//                    btnEditar.setEnabled(false);
+//                    BtnCancelar.setEnabled(false);
+//                    desactivarOpciones();
+//                } else {
+//
+//                    ClsProductos pr = new ClsProductos(camisetaDE, talla, codProd, unidades, precio);
+//                    //boolean repetido = false;
+//                    if (productos.size() >= 0) {
+//                        System.out.println("restriccion de productos mayores a cero");
+//                        System.out.println("El tamaño de productos es : " + productos.size());
+//                        for (int i = 0; i < productos.size(); i++) {
+//                            pr = (ClsProductos) productos.get(i);
+//                            Object registro_Productos[] = {pr.getCamisetaPara(), pr.getTalla(), pr.getCodigo(), pr.getUnidadProdcu(), pr.getPrecioVentaUnid()};
+//                            if (registro_Productos[2].equals(txtCodProd.getText())) {
+//                                System.out.println("El codigo que quiere ingresar es: " + txtCodProd.getText() + " y el actual es: " + registro_Productos[2]);
+//                                JOptionPane.showMessageDialog(this, "Este codigo ya existe ingrese uno nuevo o genere uno aleatorio");
+//
+//                                repetido = true;
+//                            }
+//                        }
+//                    }
+//
+//                }
+//                if (repetido == false) {
+//                    int columna = jtblProductos.getSelectedRow();
+//                    System.out.println("LA posicion actual es: " + columna);
+//                    ClsProductos product = (ClsProductos) productos.get(columna);
+//                    product.setCamisetaPara(camisetaDE);
+//                    product.setTalla(talla);
+//                    product.setCodigo(codProd);
+//                    product.setPrecioVentaUnid(precio);
+//                    product.setUnidadProdcu(unidades);
+//
+//                    controlador.escribirObjeto(Fichero_productos, productos);
+//                    datosProducRegistro.setValueAt(product.getCamisetaPara(), columna, 0);
+//                    datosProducRegistro.setValueAt(product.getTalla(), columna, 1);
+//                    datosProducRegistro.setValueAt(product.getCodigo(), columna, 2);
+//                    datosProducRegistro.setValueAt(product.getUnidadProdcu(), columna, 3);
+//                    datosProducRegistro.setValueAt(product.getPrecioVentaUnid(), columna, 4);
+//
+//                    ///*********** modificacion de productos vista en tabla de aumentar produtos 
+//                    AumentarProdcutos.setValueAt(product.getCamisetaPara(), columna, 0);
+//                    AumentarProdcutos.setValueAt(product.getTalla(), columna, 1);
+//                    AumentarProdcutos.setValueAt(product.getCodigo(), columna, 2);
+//                    AumentarProdcutos.setValueAt(product.getUnidadProdcu(), columna, 3);
+//                    AumentarProdcutos.setValueAt(product.getPrecioVentaUnid(), columna, 4);
+//
+//                    System.out.println("En donde se escribio fue en " + columna);
+//                    System.out.println("Producto de codigo: " + codProd);
+//                    btnGuardar.setVisible(true);
+//                    activarCampos(false);
+//                    btnEliminar.setEnabled(false);
+//                    btnEditar.setEnabled(false);
+//                    BtnCancelar.setEnabled(false);
+//                    desactivarOpciones();
+//                }
+//
+//            }
+//
+//        } catch (NumberFormatException ex) {
+//            //.....aqui lo que quieras hacer si los campos estan vacios y tratan de calcular el total...
+//            JOptionPane.showMessageDialog(this, "Ingrese un valor numerico en el campo de precio ejemplo 1, 2, 3 ...");
+//        }
         desactivarOpciones();
         activarCampos(false);
         limpiarcamposTBP(jRadioButton1, jRadioButton2, jRadioButton3, jRadioButton4, jRadioButton5, jRadioButton6, true);
@@ -789,7 +942,7 @@ public class JFrRegistros extends javax.swing.JFrame {
             String camisetaDE = (String) cmbHMN.getSelectedItem();
             escuchaCMB(camisetaDE);
             String talla;
-            if (codProd.equals("") || txtPrecioProd.equals("") || cmbHMN.getSelectedItem().equals("Seleccione")) {
+            if (codProd.equals("") || txtPrecioProd.equals("") || txtDetalleProduc.equals("") || cmbHMN.getSelectedItem().equals("Seleccione")) {
                 JOptionPane.showMessageDialog(this, "Llene todos los campos");
             } else {
                 if (jRadioButton1.isSelected()) {
@@ -836,6 +989,7 @@ public class JFrRegistros extends javax.swing.JFrame {
         //btnGuardar.setVisible(true);
         BtnCancelar.setEnabled(true);
         escuchaCMB(escucha);
+
     }//GEN-LAST:event_cmbHMNItemStateChanged
 
     private void BtnCancelarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnCancelarActionPerformed
@@ -845,6 +999,9 @@ public class JFrRegistros extends javax.swing.JFrame {
         desactivarOpciones();
         btnGuardar.setVisible(true);
         btnGuardar.setEnabled(false);
+        activarCamposCodigo = true;
+        jtblProductos.setSelectionMode(seleccionTabla2);//.addSelectionInterval(seleccionTabla2, seleccionTabla2);
+        seleccionTabla2 = 0;
     }//GEN-LAST:event_BtnCancelarActionPerformed
 
     private void jTablelBusquedaMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTablelBusquedaMouseClicked
@@ -852,9 +1009,9 @@ public class JFrRegistros extends javax.swing.JFrame {
         int row = jTablelBusqueda.getSelectedRow();
 
         DefaultTableModel modelo = (DefaultTableModel) jTablelBusqueda.getModel();
-        String codigo = String.valueOf(jTablelBusqueda.getValueAt(row, 2));
-        String unidades = String.valueOf(jTablelBusqueda.getValueAt(row, 3));
-        String talla = String.valueOf(jTablelBusqueda.getValueAt(row, 1));
+        String codigo = String.valueOf(jTablelBusqueda.getValueAt(row, 1));
+        String unidades = String.valueOf(jTablelBusqueda.getValueAt(row, 4));
+        String talla = String.valueOf(jTablelBusqueda.getValueAt(row, 2));
         String producto = String.valueOf(jTablelBusqueda.getValueAt(row, 0));
 
         lblCodBusque.setText(codigo);
@@ -882,8 +1039,10 @@ public class JFrRegistros extends javax.swing.JFrame {
         btnSumaProductos.setEnabled(false);
         jSpinner1.setValue(0);
 
+        System.out.println("la fila cancela es :" + seleccionTabla2);
+
         jTablelBusqueda.setSelectionMode(seleccionTabla2);//.addSelectionInterval(seleccionTabla2, seleccionTabla2);
-        seleccionTabla2=0;
+        seleccionTabla2 = 0;
     }//GEN-LAST:event_btnCancelaSumaActionPerformed
 
     private void btnSumaProductosActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSumaProductosActionPerformed
@@ -891,16 +1050,18 @@ public class JFrRegistros extends javax.swing.JFrame {
         int unidadBase = Integer.parseInt(lblUnidadesActuales.getText());
         int total = unidadSumarBase + unidadBase;
         String cod = lblCodBusque.getText();
-        System.out.println("El total es de " + total);
+//        System.out.println("El total es de " + total);
 
-        int columna = jTablelBusqueda.getSelectedRow();
-        System.out.println("LA posicion actual es: " + columna);
-        ClsProductos product = (ClsProductos) productos.get(columna);
-        product.setUnidadProdcu(total);
+        try {
+            PreparedStatement pps = ConexionInter.Conexion.getConnection().prepareStatement("update Productos set unidadesProduc=unidadesProduc+'"
+                    + (int) jSpinner1.getValue() + "'where IdProduc='" + txtCodBuscado.getText() + "'");
+            System.out.println("*****************El valor de unidades modificado es: " + (int) jSpinner1.getValue());
+            pps.executeUpdate();
+            llenarTABLAproductos();
+        } catch (SQLException e) {
+            System.out.println("No se pudo modificar: ");
+        }
 
-        controlador.escribirObjeto(Fichero_productos, productos);
-        datosProducRegistro.setValueAt(total, columna, 3);
-        AumentarProdcutos.setValueAt(total, columna, 3);
         btnCancelaSuma.setEnabled(false);
         btnSumaProductos.setEnabled(false);
         jSpinner1.setEnabled(false);
@@ -911,9 +1072,9 @@ public class JFrRegistros extends javax.swing.JFrame {
         lblProBusqueda.setText("----------");
         lblUnidadesActuales.setText("----------");
         txtCodBuscado.setText(null);
-        JOptionPane.showMessageDialog(this, "Se aumentaron " + unidadSumarBase + " al producto de código: " + cod);
+        JOptionPane.showMessageDialog(this, "SE AUMENTARON " + unidadSumarBase + " PRODUCTO(S) DE CÓDIGO: " + cod);
         jTablelBusqueda.setSelectionMode(seleccionTabla2);//.addSelectionInterval(seleccionTabla2, seleccionTabla2);
-        seleccionTabla2=0;
+        seleccionTabla2 = 0;
     }//GEN-LAST:event_btnSumaProductosActionPerformed
 
     private void btnBuscarProductoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBuscarProductoActionPerformed
@@ -922,46 +1083,86 @@ public class JFrRegistros extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(this, "Ingrese un codigo para aumentar productos");
         } else {
             int row = jTablelBusqueda.getSelectedRow();
-            ClsProductos pr = new ClsProductos();
-            for (int i = 0; i < productos.size(); i++) {
-                pr = (ClsProductos) productos.get(i);
-                Object registro_Productos[] = {pr.getCamisetaPara(), pr.getTalla(), pr.getCodigo(), pr.getUnidadProdcu(), pr.getPrecioVentaUnid()};
-                if (registro_Productos[2].equals(txtCodBuscado.getText())) {
-                    System.out.println(i);
-                    repetido = true;
 
-                    int unidades = (int) registro_Productos[3];
-                    lblCodBusque.setText((String) registro_Productos[2]);
-                    lblTallaBusq.setText((String) registro_Productos[1]);
-                    lblProBusqueda.setText((String) registro_Productos[0]);
-                    lblUnidadesActuales.setText(String.valueOf(unidades));
-                    System.out.println("Unidades actuales" + unidades);
+            Statement st;
+            try {
+                String[] Registros = new String[5];
+                String sql = "SELECT * FROM productos";
+                st = cn.createStatement();
+                ResultSet rs = st.executeQuery(sql);
 
-                    seleccionTabla2 = i;
-                    System.out.println("La pocicio final de tabla " + seleccionTabla2);
-                    jTablelBusqueda.getSelectionModel().addSelectionInterval(seleccionTabla2, seleccionTabla2);
-                    btnCancelaSuma.setEnabled(true);
-                    btnSumaProductos.setEnabled(true);
-                    jSpinner1.setEnabled(repetido);
-                    return;
+                int cuente = 0;
+                while (rs.next()) {
+                    System.out.println("contador de :" + cuente++);
+                    Registros[1] = rs.getString("IdProduc");
+                    System.out.println("Ingresando AL boton de busqueda y contiene: " + Registros[1]);
+                    if (txtCodBuscado.getText().equals(Registros[1])) {
+                        System.out.println("encontrado en la fila: " + cuente);
+                        int rowss = cuente - 1;
+
+//        DefaultTableModel modelo = (DefaultTableModel) jTablelBusqueda.getModel();
+                        String codigo = String.valueOf(jTablelBusqueda.getValueAt(rowss, 2));
+                        String unidades = String.valueOf(jTablelBusqueda.getValueAt(rowss, 4));
+                        String talla = String.valueOf(jTablelBusqueda.getValueAt(rowss, 1));
+                        String camisetaDE = String.valueOf(jTablelBusqueda.getValueAt(rowss, 0));
+                        System.out.println("El elemento es codigo: " + codigo);
+                        seleccionTabla2 = cuente - 1;
+
+                        lblCodBusque.setText(codigo);
+                        lblTallaBusq.setText(talla);
+                        lblProBusqueda.setText(camisetaDE);
+                        lblUnidadesActuales.setText(unidades);
+
+                        jTablelBusqueda.getSelectionModel().addSelectionInterval(seleccionTabla2, seleccionTabla2);
+                        txtCodBuscado.setText(codigo);
+
+                        desactivarCampos(false);
+                        btnSumaProductos.setEnabled(true);
+                        btnCancelaSuma.setEnabled(true);
+                        jSpinner1.setEnabled(true);
+                        seleccionTabla2 = 0;
+                        return;
+                    }
                 }
+            } catch (SQLException ex) {
+                JOptionPane.showMessageDialog(null, "El tipo de error es: " + ex);
             }
-            if (repetido = true) {
-                btnCancelaSuma.setEnabled(false);
-                btnSumaProductos.setEnabled(false);
-                jSpinner1.setEnabled(false);
-                jSpinner1.setValue(0);
+            btnCancelaSuma.setEnabled(false);
+            btnSumaProductos.setEnabled(false);
+            jSpinner1.setEnabled(false);
+            jSpinner1.setValue(0);
 
-                lblCodBusque.setText("----------");
-                lblTallaBusq.setText("----------");
-                lblProBusqueda.setText("----------");
-                lblUnidadesActuales.setText("----------");
+            lblCodBusque.setText("----------");
+            lblTallaBusq.setText("----------");
+            lblProBusqueda.setText("----------");
+            lblUnidadesActuales.setText("----------");
 
-                JOptionPane.showMessageDialog(null, "No existe el codigo buscado", "Error", JOptionPane.WARNING_MESSAGE);
-            }
+            JOptionPane.showMessageDialog(null, "No existe el codigo buscado", "Error", JOptionPane.ERROR_MESSAGE);
+
         }
 
     }//GEN-LAST:event_btnBuscarProductoActionPerformed
+
+    private void txtCodBuscadoMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_txtCodBuscadoMouseClicked
+        // TODO add your handling code here:
+        lblCodBusque.setText("----------");
+        lblTallaBusq.setText("----------");
+        lblProBusqueda.setText("----------");
+        lblUnidadesActuales.setText("----------");
+        jSpinner1.setEnabled(false);
+        btnCancelaSuma.setEnabled(false);
+        btnSumaProductos.setEnabled(false);
+        jSpinner1.setValue(0);
+
+        jTablelBusqueda.setSelectionMode(seleccionTabla2);//.addSelectionInterval(seleccionTabla2, seleccionTabla2);
+        seleccionTabla2 = 0;
+    }//GEN-LAST:event_txtCodBuscadoMouseClicked
+
+    private void txtDetalleProducKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtDetalleProducKeyReleased
+        // TODO add your handling code here:
+        String cadena = (txtDetalleProduc.getText()).toUpperCase();
+        txtDetalleProduc.setText(cadena);
+    }//GEN-LAST:event_txtDetalleProducKeyReleased
 
     public void DesmarcarBotonesSelec(JRadioButton tallaS, JRadioButton tallaM, JRadioButton tallaL, JRadioButton tallaXL, JRadioButton tallaXXL, JRadioButton tallaDESC, boolean y) {
 
@@ -1024,59 +1225,160 @@ public class JFrRegistros extends javax.swing.JFrame {
         System.out.println("Llega al Archivo DAT El valor que se quiere ingresa es de :" + talla);
         String codProd = txtCodProd.getText();
         int unidades = (int) jSpinnCantidad.getValue();
+        System.out.println("El valor de unidades ingresadoes es: " + unidades);
         double precio = Double.valueOf(txtPrecioProd.getText());
         String camisetaDE = (String) cmbHMN.getSelectedItem();
-        //String talla;
+        String detalleProducto = txtDetalleProduc.getText();
         System.out.println(camisetaDE + talla + codProd + unidades + precio);
-        ClsProductos P1 = new ClsProductos(camisetaDE, talla, codProd, unidades, precio);
+//        ClsProductos P1 = new ClsProductos(camisetaDE, talla, codProd, unidades, precio);
 //        datosProducRegistro.setRowCount(0);
         boolean repetido = false;
-        if (productos.size() >= 0) {
-            System.out.println("restriccion de productos mayores a cero");
-            System.out.println("El tamaño de productos es : " + productos.size());
-            for (int i = 0; i < productos.size(); i++) {
-                P1 = (ClsProductos) productos.get(i);
-                Object registro_Productos[] = {P1.getCamisetaPara(), P1.getTalla(), P1.getCodigo(), P1.getUnidadProdcu(), P1.getPrecioVentaUnid()};
-                if (registro_Productos[2].equals(codProd)) {
-                    JOptionPane.showMessageDialog(this, "Este codigo ya existe ingrese uno nuevo o genere uno aleatorio");
-                    System.out.println(i);
+//        if (productos.size() >= 0) {
+//            System.out.println("restriccion de productos mayores a cero");
+//            System.out.println("El tamaño de productos es : " + productos.size());
+//            for (int i = 0; i < productos.size(); i++) {
+//                P1 = (ClsProductos) productos.get(i);
+//                Object registro_Productos[] = {P1.getCamisetaPara(), P1.getTalla(), P1.getCodigo(), P1.getUnidadProdcu(), P1.getPrecioVentaUnid()};
+//                if (registro_Productos[2].equals(codProd)) {
+//                    JOptionPane.showMessageDialog(this, "Este codigo ya existe ingrese uno nuevo o genere uno aleatorio");
+//                    System.out.println(i);
+//                    repetido = true;
+//                }
+//            }
+//
+//        }
+        Statement st;
+        try {
+            System.out.println("Entro al TRY y se esta enecutando la accion que solicite");
+            String[] Registros = new String[6];
+            String sql = "SELECT * FROM productos";
+            st = cn.createStatement();
+            ResultSet rs = st.executeQuery(sql);
+
+            int cuente = 0;
+            while (rs.next()) {
+                System.out.println("Ingresa al while: " + cuente);
+                System.out.println("contador de :" + cuente++);
+                Registros[1] = rs.getString("IdProduc");
+                System.out.println("Ingresando AL boton de busqueda y contiene: " + Registros[1]);
+//                System.out.println("EL codigo ingresado es: "+);
+                if (txtCodProd.getText().equals(Registros[1])) {
+                    JOptionPane.showMessageDialog(null, "El codigo: " + txtCodProd.getText() + " ya existe ingrese un nuevo código", "ERROR DE CÓDIGO", JOptionPane.ERROR_MESSAGE);
+//                    llenarTABLAproductos();
                     repetido = true;
                 }
             }
-
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(null, "El tipo de error es: " + ex);
         }
-        if (repetido == false) {
-            ClsProductos Pr = new ClsProductos(camisetaDE, talla, codProd, unidades, precio);
-            System.out.println("Tratando de registrar 2");
-            productos.add(Pr);
-            controlador.escribirObjeto(Fichero_productos, productos);
 
-//            AumentarProdcutos.setValueAt(Pr.getCamisetaPara(), columna, 0);
-//                    AumentarProdcutos.setValueAt(Pr.getTalla(), columna, 1);
-//                    AumentarProdcutos.setValueAt(Pr.getCodigo(), columna, 2);
-//                    AumentarProdcutos.setValueAt(Pr.getUnidadProdcu(), columna, 3);
-//                    AumentarProdcutos.setValueAt(Pr.getPrecioVentaUnid(), columna, 4);
-            llenarTABLAproductos();
+        if (repetido == false) {
+            try {
+                String cod = codProd;
+                String tipocami = camisetaDE;
+                String tallaCami = talla;
+                String detalleproduc = detalleProducto;
+                String unidadCami = String.valueOf(unidades);
+                String precioCami = String.valueOf(precio);
+
+                ProcedimientosAlmacenados.RegistroProducto(cod, tipocami, tallaCami, detalleproduc, unidadCami, precioCami);
+
+//                PreparedStatement psd2 = cn.prepareStatement("INSERT INTO Productos(IdProduc,camisetaHMN,tallaProduc,unidadesProduc,precioVentaProduc) VALUES (?,?,?,?,?)");
+//
+//                psd2.setString(1, cod);
+//                psd2.setString(2, tipocami);
+//                psd2.setString(3, tallaCami);
+//                psd2.setString(4, unidadCami);
+//                psd2.setString(5, precioCami);
+//                psd2.executeUpdate();
+                //if(n>0){
+                JOptionPane.showMessageDialog(null, "Regsitro guardado");
+                llenarTABLAproductos();
+                limpiarcamposTBP(jRadioButton1, jRadioButton2, jRadioButton3, jRadioButton4, jRadioButton5, jRadioButton6, true);
+        desactivarCampos(false);
+        activarCampos(false);
+        desactivarOpciones();
+        btnGuardar.setVisible(true);
+        btnGuardar.setEnabled(false);
+        activarCamposCodigo = true;
+            } catch (SQLException ex) {
+                Logger.getLogger(JFrRegistros.class.getName()).log(Level.SEVERE, null, ex);
+            }
+
+//            ClsProductos Pr = new ClsProductos(camisetaDE, talla, codProd, unidades, precio);
+//
+//            System.out.println("Tratando de registrar 2");
+//            productos.add(Pr);
+//            controlador.escribirObjeto(Fichero_productos, productos);
+//            llenarTABLAproductos();
         }
     }
 
     public void llenarTABLAproductos() {
-        datosProducRegistro.setRowCount(0);
-        AumentarProdcutos.setRowCount(0);
-        System.out.println("Tratando de llenar la tabla");
-        if (productos.size() >= 0) {
-            ClsProductos pro;
-            for (int i = 0; i < productos.size(); i++) {
-                pro = (ClsProductos) productos.get(i);
-                Object registro_ProD[] = {pro.getCamisetaPara(), pro.getTalla(), pro.getCodigo(), pro.getUnidadProdcu(), pro.getPrecioVentaUnid()};
-                datosProducRegistro.addRow(registro_ProD);
-                AumentarProdcutos.addRow(registro_ProD);
-                limpiarcamposTBP(jRadioButton1, jRadioButton2, jRadioButton3, jRadioButton4, jRadioButton5, jRadioButton6, true);
+//        datosProducRegistro.setRowCount(0);
+//        AumentarProdcutos.setRowCount(0);
+//        System.out.println("Tratando de llenar la tabla");
+//        if (productos.size() >= 0) {
+//            ClsProductos pro;
+//            for (int i = 0; i < productos.size(); i++) {
+//                pro = (ClsProductos) productos.get(i);
+//                Object registro_ProD[] = {pro.getCamisetaPara(), pro.getTalla(), pro.getCodigo(), pro.getUnidadProdcu(), pro.getPrecioVentaUnid()};
+//                datosProducRegistro.addRow(registro_ProD);
+//                AumentarProdcutos.addRow(registro_ProD);
+        String[] Titulos = {"CAMISETA", "CÓDIGO", "TALLA", "DETALLE", "UNIDADES", "PRECIO DE VENTA"};
+        String[] Titulos2 = {"CAMISETA DE", "CÓDIGO", "TALLA", "DETALLE", "UNIDADES DISPONIBLES", "PRECIO POR UNIDAD"};
+        String[] Registros = new String[6];
+        String[] RegistrosA = new String[6];
+
+        String sql = "SELECT * FROM productos";
+        datosProducRegistro = new DefaultTableModel(null, Titulos);
+        AumentarProdcutos = new DefaultTableModel(null, Titulos2);
+
+//        ClsConection cc = new ClsConection();
+        Conexion cc = new Conexion();
+        Connection cn = cc.getConnection();
+
+        ConexionInter.Conexion.getConnection();
+        System.out.println("LA conexcion se establecio");
+
+        Statement st;
+        try {
+            st = cn.createStatement();
+            ResultSet rs = st.executeQuery(sql);
+
+            while (rs.next()) {
+                Registros[0] = rs.getString("camisetaHMN");
+                Registros[1] = rs.getString("IdProduc");
+                Registros[2] = rs.getString("tallaProduc");
+                Registros[3] = rs.getString("detalles");
+                Registros[4] = rs.getString("unidadesProduc");
+                Registros[5] = rs.getString("precioVentaProduc");
+                System.out.println("Uno de los codigos es : " + Registros[1]);
+
+                datosProducRegistro.addRow(Registros);
+                RegistrosA[0] = rs.getString("camisetaHMN");
+                RegistrosA[1] = rs.getString("IdProduc");
+                RegistrosA[2] = rs.getString("tallaProduc");
+                RegistrosA[3] = rs.getString("detalles");
+                RegistrosA[4] = rs.getString("unidadesProduc");
+                RegistrosA[5] = rs.getString("precioVentaProduc");
+                AumentarProdcutos.addRow(RegistrosA);
             }
+            jtblProductos.setModel(datosProducRegistro);
+            jTablelBusqueda.setModel(AumentarProdcutos);
+
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(null, "El tipo de error es: " + ex);
         }
-        //limpiarcamposTBP(jRadioButton1, jRadioButton2, jRadioButton3, jRadioButton4, jRadioButton5, jRadioButton6, true);
+        limpiarcamposTBP(jRadioButton1, jRadioButton2, jRadioButton3, jRadioButton4, jRadioButton5, jRadioButton6, true);
+
+        //revisar este tutorial
+        //https://www.youtube.com/watch?v=xuO94ROMCsE
+//            }
+//        }
+//        //limpiarcamposTBP(jRadioButton1, jRadioButton2, jRadioButton3, jRadioButton4, jRadioButton5, jRadioButton6, true);
         //JOptionPane.showMessageDialog(this, "Producot guardado exitosamente");
-        desactivarCampos(false);
+//        desactivarCampos(false);
     }
 
     public void llenarCmbDefecto() {
@@ -1098,6 +1400,7 @@ public class JFrRegistros extends javax.swing.JFrame {
 
         txtCodProd.setEnabled(false);
         txtPrecioProd.setEnabled(false);
+        txtDetalleProduc.setEnabled(false);
 
         jSpinnCantidad.setEnabled(false);
 
@@ -1106,12 +1409,15 @@ public class JFrRegistros extends javax.swing.JFrame {
         btnGeneraCod.setEnabled(false);
         btnGuardar.setEnabled(false);
         BtnCancelar.setEnabled(false);
+
+        btnEditar.setVisible(true);
     }
 
     public void limpiarcamposTBP(JRadioButton tallaS, JRadioButton tallaM, JRadioButton tallaL, JRadioButton tallaXL, JRadioButton tallaXXL, JRadioButton tallaDESC, boolean opcion) {
 
         txtCodProd.setText(null);
         txtPrecioProd.setText(null);
+        txtDetalleProduc.setText(null);
         jSpinnCantidad.setValue(0);
         tallaS.setSelected(opcion);
         tallaM.setSelected(opcion);
@@ -1183,17 +1489,32 @@ public class JFrRegistros extends javax.swing.JFrame {
         jRadioButton4.setEnabled(activar);
         jRadioButton5.setEnabled(activar);
         txtCodProd.setEnabled(activar);
+        txtDetalleProduc.setEnabled(activar);
         txtPrecioProd.setEnabled(activar);
         jSpinnCantidad.setEnabled(activar);
         btnGeneraCod.setEnabled(activar);
     }
 
     public void activarCampos(boolean activar) {
-        txtCodProd.setEnabled(activar);
-        txtPrecioProd.setEnabled(activar);
-        jSpinnCantidad.setEnabled(activar);
-        btnGeneraCod.setEnabled(activar);
-        btnGuardar.setEnabled(activar);
+
+        if (activarCamposCodigo == false) {
+            System.out.println("Desactivando para no editar codigo");
+            txtCodProd.setEnabled(false);
+            btnGeneraCod.setEnabled(false);
+            txtPrecioProd.setEnabled(true);
+            txtDetalleProduc.setEnabled(true);
+            jSpinnCantidad.setEnabled(true);
+            btnGuardar.setEnabled(true);
+        }
+        if (activarCamposCodigo == true) {
+
+            txtCodProd.setEnabled(activar);
+            txtPrecioProd.setEnabled(activar);
+            txtDetalleProduc.setEnabled(activar);
+            jSpinnCantidad.setEnabled(activar);
+            btnGeneraCod.setEnabled(activar);
+            btnGuardar.setEnabled(activar);
+        }
     }
 
     public String aleatoria(String resultado, String palabras, int numero) {
@@ -1257,6 +1578,7 @@ public class JFrRegistros extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel11;
+    private javax.swing.JLabel jLabel12;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
@@ -1288,6 +1610,7 @@ public class JFrRegistros extends javax.swing.JFrame {
     private javax.swing.JLabel lblUnidadesActuales;
     private javax.swing.JTextField txtCodBuscado;
     private javax.swing.JTextField txtCodProd;
+    private javax.swing.JTextField txtDetalleProduc;
     private javax.swing.JTextField txtPrecioProd;
     // End of variables declaration//GEN-END:variables
 }

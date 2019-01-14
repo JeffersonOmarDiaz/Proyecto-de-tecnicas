@@ -7,23 +7,25 @@ create table Productos (
 IdProduc varchar(15) not null,
 camisetaHMN varchar (7) not null,
 tallaProduc varchar(4) not null, 
+detalles varchar (50)not null,
 unidadesProduc int not null,
 precioVentaProduc decimal(6,2)not null,
---detalles varchar (30),
 --FechaRegistro date,
 --HoraRegistro time
 
 --Clave primaria
 primary key (IdProduc)
 )
+drop table productos
+select * from Productos
 
 insert into Productos Values
-('CAMM001','Mujer','L',7,10.50),--SYSDATETIME(),CONVERT(time, SYSDATETIME())),
-('CAMH002','Hombre','M',7,10.50),--SYSDATETIME(),CONVERT(time, SYSDATETIME())),
-('CAMN003','Niñ@','S',7,10.50),--SYSDATETIME(),CONVERT(time, SYSDATETIME())),
-('CAMM004','Mujer','XL',7,17.50),--SYSDATETIME(),CONVERT(time, SYSDATETIME())),
-('CAMH005','Hombre','XXL',7,3.50),--SYSDATETIME(),CONVERT(time, SYSDATETIME())),
-('CAMH007','Hombre','M',24,7.25)--,SYSDATETIME(),CONVERT(time, SYSDATETIME()))
+('CAMM001','Mujer','L','CAMISETA CUELLO EN V',7,10.50),--SYSDATETIME(),CONVERT(time, SYSDATETIME())),
+('CAMH002','Hombre','M','CAMISETA CUELLO REDONDO ',7,10.50),--SYSDATETIME(),CONVERT(time, SYSDATETIME())),
+('CAMN003','Niñ@','S','CAMISETA POLO',5,10.50),--SYSDATETIME(),CONVERT(time, SYSDATETIME())),
+('CAMM004','Mujer','XL','CAMISETA ESTAMPADA',7,17.50),--SYSDATETIME(),CONVERT(time, SYSDATETIME())),
+('CAMH005','Hombre','XXL','CAMISETA DE ALGODÓN',2,3.50),--SYSDATETIME(),CONVERT(time, SYSDATETIME())),
+('CAMH007','Hombre','M','CAMISETA PUBLICITARIA',0,7.25)--,SYSDATETIME(),CONVERT(time, SYSDATETIME()))
 
 select * from Productos
 
@@ -62,12 +64,15 @@ create procedure AgregaProducto (
 @IdProduc varchar (15),
 @camisetaHMN varchar (7),
 @tallaProduc varchar (4),
+@detalles varchar (50),
 @unidadesProduc int,
 @precioVentaProduc decimal (6,2))
-as begin
-insert into Productos values(@IdProduc,@camisetaHMN,@tallaProduc,@unidadesProduc, @precioVentaProduc)
+as begins
+insert into Productos values(@IdProduc,@camisetaHMN,@tallaProduc,@detalles,@unidadesProduc, @precioVentaProduc)
 end 
 go
+
+drop procedure AgregaProducto
 
 /************* Eliminacion  Productos**************/
 go 
@@ -81,10 +86,10 @@ go
 /*************  Busqueda por tipo camiseta HMN *****************/
 
 go 
-create procedure BusquedaProductoPorHMN (
-@CamisetaHMN varchar (7))
+create procedure BusquedaProductoPorCod (
+@IdProduc varchar (15))
 as begin
-select * from Productos where CamisetaHMN = @CamisetaHMN
+select * from Productos where IdProduc = @IdProduc
 end 
 go
 
@@ -109,3 +114,15 @@ go
 
 drop procedure AgregaCliente
 delete from Clientes where IdClien like '1723718605'
+
+/************* Eliminacion  CLIENTES**************/
+go 
+create procedure EliminarCliente (
+@IdClien varchar (10))
+as begin
+delete from Clientes where IdClien = @IdClien
+end 
+go
+
+select * from Clientes
+select * from productos
